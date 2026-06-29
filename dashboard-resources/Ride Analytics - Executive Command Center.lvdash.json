@@ -1,0 +1,750 @@
+{
+  "datasets": [
+    {
+      "name": "1de01462",
+      "displayName": "Live KPIs",
+      "queryLines": [
+        "select \r\n",
+        "total_revenue_inr,\r\n",
+        "cancellation_rate_pct,\r\n",
+        "active_drivers,\r\n",
+        "avg_fare_inr,\r\n",
+        "CAST(ROUND(total_rides * (100- cancellation_rate_pct) / 100,0) AS BIGINT) AS completed_rides\r\n",
+        "from  workspace.realtime.gold_live_kpis"
+      ],
+      "catalog": "workspace",
+      "schema": "realtime"
+    },
+    {
+      "name": "08cd8c71",
+      "displayName": "Revenue per Minute",
+      "queryLines": [
+        "SELECT \r\n",
+        "minute_bucket,\r\n",
+        "revenue_inr,\r\n",
+        "completed_rides\r\n",
+        "from workspace.realtime.gold_revenue_per_minute\r\n",
+        "ORDER BY minute_bucket"
+      ]
+    },
+    {
+      "name": "55740af0",
+      "displayName": "Ride Status Mix",
+      "queryLines": [
+        "select status, CAST(ride_count AS bigint) AS ride_count\r\n",
+        "from workspace.realtime.gold_ride_status_breakdown\r\n",
+        "order by ride_count desc"
+      ],
+      "catalog": "workspace",
+      "schema": "realtime"
+    },
+    {
+      "name": "fc562370",
+      "displayName": "City Performance",
+      "queryLines": [
+        "select city, round(revenue_inr, 0) as revenue_inr\r\n",
+        "from workspace.realtime.gold_rides_by_city\r\n",
+        "order by revenue_inr desc"
+      ],
+      "catalog": "workspace",
+      "schema": "realtime"
+    },
+    {
+      "name": "bca1b3fb",
+      "displayName": "Top Revenue Zones",
+      "queryLines": [
+        "select \r\n",
+        "zone_id,city,round(total_revenue_inr,0) as total_revenue,\r\n",
+        "cast(completed_rides as bigint) as completed_rides,\r\n",
+        "round(avg_fare_inr,0) as avg_fare_inr\r\n",
+        "from workspace.realtime.gold_top_zones\r\n",
+        "order by total_revenue_inr desc limit 10"
+      ]
+    },
+    {
+      "name": "4f98dd80",
+      "displayName": "Cancellation Reasons",
+      "queryLines": [
+        "select city, coalesce(nullif(cancellation_reason,''),status) as reason, sum(cancellation_count) as cancellation_count\r\n",
+        "from workspace.realtime.gold_cancellation_analysis\r\n",
+        "group by city, coalesce(nullif(cancellation_reason,''),status)\r\n",
+        "order by cancellation_count desc"
+      ]
+    },
+    {
+      "name": "4181dada",
+      "displayName": "Pickup Demond",
+      "queryLines": [
+        "select city, pickup_area, zone_id,sum(total_rides) as total_rides,sum(cancelled_rides) as Cancellation_rides\r\n",
+        "from \r\n",
+        "workspace.realtime.gold_pickup_demand\r\n",
+        "group by city, pickup_area, zone_id\r\n",
+        "order by total_rides desc"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "f5e07f57",
+      "displayName": "Executive Overview",
+      "layout": [
+        {
+          "widget": {
+            "name": "4d931396",
+            "multilineTextboxSpec": {
+              "lines": [
+                "<span style=\"text-align:center;display:block\"><span style=\"font-size: 18px;\">**Ride Analytics - Executive Command Center**</span></span>"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "t",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1de01462",
+                  "fields": [
+                    {
+                      "name": "sum(total_revenue_inr)",
+                      "expression": "SUM(`total_revenue_inr`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Total Revenue($)"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(total_revenue_inr)"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "completed",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1de01462",
+                  "fields": [
+                    {
+                      "name": "sum(completed_rides)",
+                      "expression": "SUM(`completed_rides`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Completed Rides\n"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(completed_rides)"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 1,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "can",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1de01462",
+                  "fields": [
+                    {
+                      "name": "sum(cancellation_rate_pct)",
+                      "expression": "SUM(`cancellation_rate_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Cancellation Rate (%)"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(cancellation_rate_pct)"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 5,
+            "y": 1,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "active",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1de01462",
+                  "fields": [
+                    {
+                      "name": "sum(active_drivers)",
+                      "expression": "SUM(`active_drivers`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Active Drivers"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(active_drivers)"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 1,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "av",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1de01462",
+                  "fields": [
+                    {
+                      "name": "sum(avg_fare_inr)",
+                      "expression": "SUM(`avg_fare_inr`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Avg Fare($)"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(avg_fare_inr)"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 10,
+            "y": 1,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "53ae8989",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "08cd8c71",
+                  "fields": [
+                    {
+                      "name": "minute_bucket",
+                      "expression": "`minute_bucket`"
+                    },
+                    {
+                      "name": "revenue_inr",
+                      "expression": "`revenue_inr`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 5
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 4
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 5
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 6
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 7
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 8
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 9
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 10
+                  }
+                ]
+              },
+              "widgetType": "area",
+              "encodings": {
+                "x": {
+                  "fieldName": "minute_bucket",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "revenue_inr",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 6,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "120b3abe",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "55740af0",
+                  "fields": [
+                    {
+                      "name": "sum(ride_count)",
+                      "expression": "SUM(`ride_count`)"
+                    },
+                    {
+                      "name": "status",
+                      "expression": "`status`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "sum(ride_count)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "status",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 3,
+            "width": 6,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "revenu",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "fc562370",
+                  "fields": [
+                    {
+                      "name": "city",
+                      "expression": "`city`"
+                    },
+                    {
+                      "name": "sum(revenue_inr)",
+                      "expression": "SUM(`revenue_inr`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Revenue by City"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "city",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(revenue_inr)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "top",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "bca1b3fb",
+                  "fields": [
+                    {
+                      "name": "zone_id",
+                      "expression": "`zone_id`"
+                    },
+                    {
+                      "name": "city",
+                      "expression": "`city`"
+                    },
+                    {
+                      "name": "total_revenue",
+                      "expression": "`total_revenue`"
+                    },
+                    {
+                      "name": "completed_rides",
+                      "expression": "`completed_rides`"
+                    },
+                    {
+                      "name": "avg_fare_inr",
+                      "expression": "`avg_fare_inr`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Top 10 Revenue Zones"
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "zone_id"
+                  },
+                  {
+                    "fieldName": "city"
+                  },
+                  {
+                    "fieldName": "total_revenue"
+                  },
+                  {
+                    "fieldName": "completed_rides"
+                  },
+                  {
+                    "fieldName": "avg_fare_inr"
+                  }
+                ]
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 7,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "978360fa",
+            "multilineTextboxSpec": {
+              "lines": [
+                "<span style=\"text-align:center;display:block;\"><span style=\"font-size: 18px;\">Operational Deep Dive - Who & Where</span></span>"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 14,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "cab",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4f98dd80",
+                  "fields": [
+                    {
+                      "name": "city",
+                      "expression": "`city`"
+                    },
+                    {
+                      "name": "reason",
+                      "expression": "`reason`"
+                    },
+                    {
+                      "name": "sum(cancellation_count)",
+                      "expression": "SUM(`cancellation_count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Cancellation Reason by City"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "reason",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(cancellation_count)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "city",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "ebd38df3",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4181dada",
+                  "fields": [
+                    {
+                      "name": "city",
+                      "expression": "`city`"
+                    },
+                    {
+                      "name": "pickup_area",
+                      "expression": "`pickup_area`"
+                    },
+                    {
+                      "name": "zone_id",
+                      "expression": "`zone_id`"
+                    },
+                    {
+                      "name": "total_rides",
+                      "expression": "`total_rides`"
+                    },
+                    {
+                      "name": "Cancellation_rides",
+                      "expression": "`Cancellation_rides`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "city"
+                  },
+                  {
+                    "fieldName": "pickup_area"
+                  },
+                  {
+                    "fieldName": "zone_id"
+                  },
+                  {
+                    "fieldName": "total_rides"
+                  },
+                  {
+                    "fieldName": "Cancellation_rides"
+                  }
+                ]
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 21,
+            "width": 12,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}
