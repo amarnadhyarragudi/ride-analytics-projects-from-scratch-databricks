@@ -75,11 +75,21 @@
       "name": "4181dada",
       "displayName": "Pickup Demond",
       "queryLines": [
-        "select city, pickup_area, zone_id,sum(total_rides) as total_rides,sum(cancelled_rides) as Cancellation_rides\r\n",
-        "from \r\n",
-        "workspace.realtime.gold_pickup_demand\r\n",
-        "group by city, pickup_area, zone_id\r\n",
-        "order by total_rides desc"
+        "SELECT\r\n",
+        "  city,\r\n",
+        "  pickup_area,\r\n",
+        "  zone_id,\r\n",
+        "  CAST(SUM(total_rides) AS BIGINT) AS total_rides,\r\n",
+        "  CAST(SUM(cancelled_rides) AS BIGINT) AS cancelled_rides,\r\n",
+        "  ROUND(SUM(cancelled_rides) * 100.0 / NULLIF(SUM(total_rides), 0), 1) AS cancel_rate_pct\r\n",
+        "FROM\r\n",
+        "  workspace.realtime.gold_pickup_demand\r\n",
+        "GROUP BY\r\n",
+        "  city,\r\n",
+        "  pickup_area,\r\n",
+        "  zone_id\r\n",
+        "ORDER BY\r\n",
+        "  total_rides DESC"
       ]
     }
   ],
@@ -670,7 +680,7 @@
         },
         {
           "widget": {
-            "name": "ebd38df3",
+            "name": "ca-1",
             "queries": [
               {
                 "name": "main_query",
@@ -694,8 +704,12 @@
                       "expression": "`total_rides`"
                     },
                     {
-                      "name": "Cancellation_rides",
-                      "expression": "`Cancellation_rides`"
+                      "name": "cancelled_rides",
+                      "expression": "`cancelled_rides`"
+                    },
+                    {
+                      "name": "cancel_rate_pct",
+                      "expression": "`cancel_rate_pct`"
                     }
                   ],
                   "disaggregated": true
@@ -704,6 +718,10 @@
             ],
             "spec": {
               "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Cancellation pct by city , pickup area and zone id"
+              },
               "widgetType": "table",
               "encodings": {
                 "columns": [
@@ -720,7 +738,10 @@
                     "fieldName": "total_rides"
                   },
                   {
-                    "fieldName": "Cancellation_rides"
+                    "fieldName": "cancelled_rides"
+                  },
+                  {
+                    "fieldName": "cancel_rate_pct"
                   }
                 ]
               },
